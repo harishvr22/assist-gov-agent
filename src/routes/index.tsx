@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { motion, useScroll, useTransform, AnimatePresence, useInView } from "framer-motion";
 import {
-  ArrowRight, ArrowUpRight, Sparkles, Brain, Search, FileText, Cpu,
+  ArrowRight, ArrowUpRight, Sparkles, Brain as BrainIcon, Search, FileText, Cpu,
   CheckCircle2, GraduationCap, HeartHandshake, Tractor, Stethoscope,
   Home, Rocket, Briefcase, Accessibility, Send, Bot, Mic, Bell, Languages,
 } from "lucide-react";
