@@ -272,7 +272,7 @@ const brainNodes = [
   { id: "out", l: "Recommendations", x: 50, y: 92, d: "Personalized schemes + document checklists." },
 ];
 const brainEdges: [string,string][] = [["user","elig"],["elig","search"],["search","kb"],["search","live"],["kb","rag"],["live","rag"],["rag","out"]];
-function Brain() {
+function BrainSection() {
   const [hover, setHover] = useState<string | null>("rag");
   const node = brainNodes.find(n => n.id === hover) ?? brainNodes[5];
   const get = (id: string) => brainNodes.find(n => n.id === id)!;
@@ -490,7 +490,7 @@ function Universe() {
           {/* Center sun */}
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
             <div className="relative w-28 h-28 rounded-full grid place-items-center" style={{ background: "var(--gradient-glow)", boxShadow: "var(--shadow-glow)" }}>
-              <Brain className="w-9 h-9 text-white" />
+              <BrainIcon className="w-9 h-9 text-white" />
               <div className="absolute inset-0 rounded-full" style={{ animation: "pulse-ring 2.5s ease-out infinite", background: "oklch(0.82 0.15 210 / 0.3)" }} />
             </div>
             <div className="mt-3 text-[11px] font-mono text-white/60">GOVASSIST CORE</div>
@@ -793,7 +793,7 @@ function Page() {
       <Nav />
       <Hero />
       <ProblemWall />
-      <Brain />
+      <BrainSection />
       <Simulator />
       <Universe />
       <Conversation />
