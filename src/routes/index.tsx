@@ -48,10 +48,13 @@ function Nav() {
           <nav className="hidden md:flex items-center gap-7 text-[13px] text-muted-foreground">
             {links.map(l => <a key={l.h} href={l.h} className="hover:text-foreground transition-colors">{l.l}</a>)}
           </nav>
-          <a href="#cta" className="group flex items-center gap-1.5 text-[13px] font-medium bg-[var(--navy)] text-white pl-4 pr-1 py-1 rounded-full">
-            Begin
-            <span className="grid place-items-center w-7 h-7 rounded-full bg-[var(--electric)] group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-3.5 h-3.5" /></span>
-          </a>
+          <div className="flex items-center gap-3">
+            <Link to="/login" className="hidden sm:inline text-[13px] text-muted-foreground hover:text-foreground transition-colors">Sign in</Link>
+            <Link to="/register" className="group flex items-center gap-1.5 text-[13px] font-medium bg-[var(--navy)] text-white pl-4 pr-1 py-1 rounded-full">
+              Begin
+              <span className="grid place-items-center w-7 h-7 rounded-full bg-[var(--electric)] group-hover:rotate-45 transition-transform"><ArrowUpRight className="w-3.5 h-3.5" /></span>
+            </Link>
+          </div>
         </div>
       </div>
     </header>
