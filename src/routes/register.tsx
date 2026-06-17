@@ -71,7 +71,7 @@ function RegisterPage() {
     if (step < 2) return setStep(s => s + 1);
     setLoading(true);
     await new Promise(r => setTimeout(r, 1000));
-    nav({ to: "/" });
+    nav({ to: "/onboarding" });
   };
 
   const visual = (
