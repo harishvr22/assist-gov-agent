@@ -162,7 +162,7 @@ function OnboardingPage() {
       setGenStep(i + 1);
     }
     await new Promise(r => setTimeout(r, 500));
-    nav({ to: "/" });
+    nav({ to: "/eligibility" });
   };
 
   return (
