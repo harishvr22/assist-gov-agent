@@ -2207,13 +2207,30 @@
       },
       "result_count": 2,
       "_id": "a8440dce-72d8-45ce-9aad-5e196e356f65"
+    },
+    {
+      "type": "eligibility",
+      "timestamp": 1789029380.7263439,
+      "profile": {
+        "full_name": "Test Farmer",
+        "age": 25,
+        "gender": "Male",
+        "state": "Tamil Nadu",
+        "district": "Coimbatore",
+        "annual_family_income": 200000,
+        "occupation": "Employee",
+        "category": "General",
+        "disability_status": "No"
+      },
+      "result_count": 1,
+      "_id": "e94be932-f642-4a11-a8fb-fbe967ecfb37"
     }
   ],
   "notifications": [
     {
       "title": "New Eligible Schemes Found",
-      "message": "Based on your profile, you match 2 schemes! Review them on your dashboard.",
-      "timestamp": 1781971002.767553,
+      "message": "Based on your profile, you match 1 schemes! Review them on your dashboard.",
+      "timestamp": 1789029380.7428145,
       "read": false,
       "_id": "db7546f4-536e-4615-a401-9fe53772bf73"
     }
@@ -2232,6 +2249,36 @@
       "created_at": "2026-06-21T15:21:42.241381",
       "_id": "1fe9e103-d43b-4c89-bc44-bb37283c590b",
       "district": "Mumbai",
+      "annual_family_income": 200000,
+      "category": "General",
+      "disability_status": "No"
+    },
+    {
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "password_hash": "$2b$12$BHs3ZJ9dmNy98Z1gpqY0a.cxV8inXX/cWBWL4tf3JoVdxOcidYY1a",
+      "age": 25,
+      "gender": "Female",
+      "state": "Andhra Pradesh",
+      "occupation": "Student",
+      "education": "Primary",
+      "income": "< \u20b92L",
+      "created_at": "2026-08-07T10:31:20.255993",
+      "_id": "e9ac1cc9-5176-4dab-aecd-9a273c9c51c6"
+    },
+    {
+      "name": "Test Farmer",
+      "email": "testfarmer@example.com",
+      "password_hash": "$2b$12$6f8flZQdMfxsMERTW/iB/.KGJ/68RypeoZS/rWTQ3C7vt.kc7r..2",
+      "age": 25,
+      "gender": "Male",
+      "state": "Tamil Nadu",
+      "occupation": "Employee",
+      "education": "Primary",
+      "income": "< \u20b92L",
+      "created_at": "2026-09-10T08:33:15.914366",
+      "_id": "af2f1197-8552-4411-adfb-d182549addc6",
+      "district": "Coimbatore",
       "annual_family_income": 200000,
       "category": "General",
       "disability_status": "No"

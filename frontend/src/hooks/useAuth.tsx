@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   age: number | null;
@@ -10,6 +10,10 @@ interface User {
   occupation: string | null;
   education: string | null;
   income: string | null;
+  annual_family_income: number | null;
+  district: string | null;
+  category: string | null;
+  disability_status: string | null;
   created_at: string;
 }
 

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEligibility } from "../hooks/useEligibility";
 import {
   User, GraduationCap, Briefcase, Wallet, Sparkles, MapPin,
   ArrowRight, Check, Loader2, Brain, Compass, ShieldCheck,
@@ -94,9 +95,45 @@ function PillSelect({ label, value, onChange, options }: { label: string; value:
   );
 }
 
+const mapIncomeIndexToRupees = (index: number): number => {
+  switch (index) {
+    case 0: return 90000;      // Below 1L
+    case 1: return 200000;     // 1-3L
+    case 2: return 400000;     // 3-5L
+    case 3: return 650000;     // 5-8L
+    case 4: return 1000000;    // Above 8L
+    default: return 100000;
+  }
+};
+
+const mapFrontendToBackendProfile = (data: Data) => {
+  let occupation = "Employee";
+  if (data.occupation === "Student") occupation = "Student";
+  else if (data.occupation === "Farmer") occupation = "Farmer";
+  else if (data.occupation === "Job Seeker") occupation = "Unemployed";
+  else if (data.occupation === "Senior Citizen") occupation = "Senior Citizen";
+  else if (data.occupation === "Entrepreneur" || data.occupation === "Self Employed") occupation = "Self-Employed";
+
+  const category = data.categories.includes("Minority") ? "OBC" : "General";
+  const disability_status = data.categories.includes("Differently Abled") ? "Yes" : "No";
+
+  return {
+    full_name: data.name || "Anonymous Citizen",
+    age: parseInt(data.age, 10) || 25,
+    gender: ["Male", "Female", "Other"].includes(data.gender) ? data.gender : "Other",
+    state: data.state || "Maharashtra",
+    district: data.district || "Default District",
+    annual_family_income: mapIncomeIndexToRupees(data.income),
+    occupation,
+    category,
+    disability_status
+  };
+};
+
 // ---------- page ----------
 function OnboardingPage() {
   const nav = useNavigate();
+  const { checkEligibility } = useEligibility();
   const [data, setData] = useState<Data>({
     name: "", age: "", gender: "", state: "", district: "",
     education: "", occupation: "", income: 1, categories: [], area: "Urban",
@@ -157,11 +194,25 @@ function OnboardingPage() {
 
   const generate = async () => {
     setGenerating(true);
-    for (let i = 0; i < 4; i++) {
-      await new Promise(r => setTimeout(r, 750));
-      setGenStep(i + 1);
-    }
-    await new Promise(r => setTimeout(r, 500));
+    setGenStep(1);
+    
+    // Simulate steps for UI feel
+    await new Promise(r => setTimeout(r, 600));
+    setGenStep(2);
+    
+    const backendProfile = mapFrontendToBackendProfile(data);
+    
+    await new Promise(r => setTimeout(r, 600));
+    setGenStep(3);
+    
+    const result = await checkEligibility(backendProfile);
+    
+    await new Promise(r => setTimeout(r, 600));
+    setGenStep(4);
+    
+    await new Promise(r => setTimeout(r, 400));
+    setGenerating(false);
+    
     nav({ to: "/eligibility" });
   };
 
