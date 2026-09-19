@@ -6,6 +6,7 @@ import {
   ArrowRight, Sparkles, Bookmark, GitCompare, Eye, Clock, Trophy,
   TrendingUp, ShieldCheck, ChevronDown, Check, Zap, Target, Award, Activity,
 } from "lucide-react";
+import { VoiceControls } from "../components/VoiceControls";
 
 export const Route = createFileRoute("/recommendations")({
   head: () => ({
@@ -131,6 +132,14 @@ function SchemeCard({ s, idx, isSaved, onToggleSave }: { s: any; idx: number; is
                   <span className="text-[12px] text-[var(--navy)]">{r}</span>
                 </div>
               ))}
+              {s.failed_criteria && s.failed_criteria.length > 0 && (
+                s.failed_criteria.map((fc: string, i: number) => (
+                  <div key={i} className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                    <span className="text-[12px]">{fc}</span>
+                  </div>
+                ))
+              )}
             </div>
           </motion.div>
         )}
@@ -242,6 +251,21 @@ function RecommendationsPage() {
           <p className="mt-5 text-[15px] text-muted-foreground max-w-2xl">
             Synthesised using eligibility analysis, AI reasoning over policy embeddings, and scheme intelligence drawn from central and state portals.
           </p>
+          <div className="mt-4">
+            <VoiceControls
+              textToRead={
+                displaySchemes.length > 0
+                  ? `Here are your top recommended government schemes. ${
+                      displaySchemes[0].scheme_name || displaySchemes[0].name
+                    }. Benefit: ${
+                      Array.isArray(displaySchemes[0].benefits)
+                        ? displaySchemes[0].benefits[0]
+                        : displaySchemes[0].benefits
+                    }.`
+                  : "No recommendations available yet."
+              }
+            />
+          </div>
         </motion.div>
 
         {/* Summary */}

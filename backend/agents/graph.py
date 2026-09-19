@@ -286,7 +286,9 @@ def llm_agent(state: CitizenState) -> Dict[str, Any]:
         "Evaluate whether this citizen truly qualifies for each candidate scheme. "
         "Filter out any schemes where constraints are violated.\n"
         "Respond strictly with a JSON list of schemes that the user qualifies for. "
-        "Keep the scheme fields identical, but add a brief 'reason' field explaining why they qualify.\n"
+        "Keep the scheme fields identical, but add:\n"
+        "1. 'reason': brief explanation of why they qualify.\n"
+        "2. 'failed_criteria': array of strings listing any strict rules or edge cases that were close to violating criteria or failed.\n"
         "Return ONLY the raw JSON list, no markdown wrapper."
     )
     
@@ -314,6 +316,7 @@ def llm_agent(state: CitizenState) -> Dict[str, Any]:
             if match:
                 match_copy = match.copy()
                 match_copy["reason"] = v_item.get("reason", "Matches profile criteria.")
+                match_copy["failed_criteria"] = v_item.get("failed_criteria", [])
                 evaluated.append(match_copy)
     except Exception as e:
         print(f"LLMAgent verification failed: {e}")
@@ -321,6 +324,7 @@ def llm_agent(state: CitizenState) -> Dict[str, Any]:
         for s in fused:
             s_copy = s.copy()
             s_copy["reason"] = "Passed demographic profile filtering."
+            s_copy["failed_criteria"] = []
             evaluated.append(s_copy)
 
     _log(logs, "LLMAgent", f"Verified {len(evaluated)}/{len(fused)} eligible schemes after guideline analysis.")

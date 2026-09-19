@@ -63,10 +63,10 @@ def _parse_schemes_from_llm(llm_text: str, docs: list[str]) -> list[dict]:
     that match the frontend's expected schema.
     """
     sections = re.split(
-        r"\n(?=\d+\.\s+[A-Z*]|\*\*[A-Z]|#{1,3}\s+[A-Z])",
+        r"\n(?=\d+[\.\)]\s+|\*\*\d+[\.\)]|\#{1,3}\s+|\*\*[^*]+\*\*|(?:\d+\.\s+\*\*))",
         llm_text.strip(),
     )
-    sections = [s.strip() for s in sections if len(s.strip()) > 30]
+    sections = [s.strip() for s in sections if len(s.strip()) > 15]
 
     url_map: dict[str, str] = {}
     for doc in docs:
@@ -469,6 +469,16 @@ def check_eligibility():
         result["final_response"],
         result["retrieved_documents"],
     )
+    if not schemes and result.get("evaluated_schemes"):
+        for s in result["evaluated_schemes"]:
+            schemes.append({
+                "name":               s.get("scheme_name", "Government Scheme"),
+                "match_percent":      92,
+                "description":        s.get("reason", s.get("benefits", "Eligible under demographic profile criteria.")),
+                "benefits":           [s.get("benefits")] if isinstance(s.get("benefits"), str) else (s.get("benefits") or ["Direct scheme benefits apply."]),
+                "required_documents": s.get("documents") or ["Aadhaar Card", "Income Certificate"],
+                "apply_url":          s.get("apply_url", "#")
+            })
 
     # Compile the status of the 8 agents
     agent_status = {
@@ -616,7 +626,18 @@ def chat():
     if not message:
         return jsonify({"status": "error", "message": "Message cannot be empty"}), 400
 
-    # 1. Query vector database for RAG context
+    # 1. Classify User Intent & Entities
+    from backend.intent_classifier import classify_intent
+    intent_data = classify_intent(message)
+
+    # 2. Fetch Multi-Turn Conversation History for Session
+    history_docs = db.queries.find({"type": "chat", "username": username})
+    past_messages = []
+    for h in history_docs[-6:]: # Last 3 turns
+        past_messages.append(f"User: {h.get('message')}\nAssistant: {h.get('reply')}")
+    history_str = "\n".join(past_messages) if past_messages else "No previous conversation turns."
+
+    # 3. Query vector database for RAG context
     try:
         import chromadb
         _CHROMA_PATH = os.path.join(os.path.dirname(__file__), "chroma_db")
@@ -628,7 +649,7 @@ def chat():
     except Exception:
         context_str = "No specific guidelines available in vector store."
 
-    # 2. Invoke Gemini for response
+    # 4. Invoke Gemini with Multi-Turn Memory & Intent Context
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI
         from langchain.prompts import PromptTemplate
@@ -640,30 +661,43 @@ def chat():
         )
         
         prompt = PromptTemplate.from_template(
-            "You are a helpful GovTech assistant. "
-            "Help the citizen answer their questions using the provided scheme context details.\n\n"
+            "You are a helpful GovTech assistant.\n"
+            "Detected Intent: {primary_intent} (Confidence: {confidence})\n"
+            "Help the citizen answer their questions using the provided context details and conversation history.\n\n"
             "Citizen Profile details: {profile}\n\n"
+            "Multi-Turn Conversation History:\n{history}\n\n"
             "ChromaDB Scheme Context Guidelines:\n{context}\n\n"
             "User Message: {message}\n\n"
             "Explain in clear, simple paragraphs. Support Hindi/Tamil translations or simple English definitions if asked."
         )
         
         chain = prompt | llm
-        response = chain.invoke({"profile": str(profile), "context": context_str, "message": message})
+        response = chain.invoke({
+            "primary_intent": intent_data["primary_intent"],
+            "confidence": intent_data["confidence"],
+            "profile": str(profile),
+            "history": history_str,
+            "context": context_str,
+            "message": message
+        })
         reply = response.content
     except Exception as e:
         reply = f"I'm sorry, I encountered an issue querying the AI service: {e}"
 
-    # Log query
+    # Log query and persist multi-turn history
     db.queries.insert_one({
         "type": "chat",
         "username": username,
         "timestamp": time.time(),
+        "intent": intent_data["primary_intent"],
         "message": message,
         "reply": reply
     })
 
-    return jsonify({"reply": reply}), 200
+    return jsonify({
+        "reply": reply,
+        "intent": intent_data
+    }), 200
 
 
 # ── Admin Dashboard Analytics ─────────────────────────────────────────────────
@@ -789,6 +823,47 @@ def admin_delete_scheme(id):
     return jsonify({"status": "success", "message": f"Scheme '{scheme.get('scheme_name')}' deleted successfully"}), 200
 
 
+@app.post("/api/admin/upload-pdf")
+def admin_upload_pdf():
+    """Uploads and indexes a policy PDF document into ChromaDB."""
+    if "file" not in request.files:
+        return jsonify({"status": "error", "message": "No PDF file provided in request"}), 400
+
+    file = request.files["file"]
+    scheme_name = request.form.get("scheme_name", "").strip() or file.filename.replace(".pdf", "").replace("_", " ")
+    category = request.form.get("category", "General").strip()
+    state = request.form.get("state", "All India").strip()
+
+    if not file.filename.endswith(".pdf") and not file.filename.endswith(".txt"):
+        return jsonify({"status": "error", "message": "File must be a PDF or TXT policy document"}), 400
+
+    # Save temp file
+    temp_dir = os.path.join(os.path.dirname(__file__), "temp_uploads")
+    os.makedirs(temp_dir, exist_ok=True)
+    temp_path = os.path.join(temp_dir, file.filename)
+    file.save(temp_path)
+
+    try:
+        from backend.document_processor import processor
+        res = processor.process_and_index_document(
+            file_path=temp_path,
+            scheme_name=scheme_name,
+            category=category,
+            state=state
+        )
+        return jsonify({"status": "success", "data": res}), 201
+    except Exception as e:
+        logger.exception("PDF processing error")
+        return jsonify({"status": "error", "message": f"Document ingestion failed: {e}"}), 500
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+

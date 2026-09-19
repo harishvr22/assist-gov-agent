@@ -8,6 +8,7 @@ import {
   Home, Briefcase, UserCheck, Accessibility, BookOpen, ArrowRight, X, Bookmark,
   Eye, ChevronRight, MessageCircle, Check, TrendingUp, Star, Activity, Loader2,
 } from "lucide-react";
+import { VoiceControls } from "../components/VoiceControls";
 
 export const Route = createFileRoute("/discovery")({
   head: () => ({
@@ -358,6 +359,11 @@ function DiscoveryPage() {
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
             )}
+
+            <VoiceControls
+              compact
+              onTranscriptReceived={(text) => setQ(text)}
+            />
 
             <button className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-[var(--electric)] to-[var(--cyan)] text-white text-[13px] font-medium">
               <Sparkles className="w-3.5 h-3.5" /> Find Schemes

@@ -49,6 +49,8 @@ htmlcov/
 # Local Database & Vector DB Storage
 chroma_db/
 **/chroma_db/
+local_db.json
+**/local_db.json
 
 # Logs
 logs/

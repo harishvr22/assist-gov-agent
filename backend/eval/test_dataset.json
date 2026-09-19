@@ -1,0 +1,162 @@
+[
+  {
+    "profile_id": "P01",
+    "profile": {
+      "full_name": "Anita Roy",
+      "age": 21,
+      "gender": "Female",
+      "state": "Tamil Nadu",
+      "district": "Chennai",
+      "annual_family_income": 150000,
+      "occupation": "Student",
+      "category": "OBC",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Student", "Education", "Women"],
+    "expected_schemes": ["PM Vidya Lakshmi Education Loan", "Post-Matric Scholarship (OBC)", "Tamil Nadu Free Laptop Scheme"]
+  },
+  {
+    "profile_id": "P02",
+    "profile": {
+      "full_name": "Suresh Patel",
+      "age": 45,
+      "gender": "Male",
+      "state": "Gujarat",
+      "district": "Anand",
+      "annual_family_income": 120000,
+      "occupation": "Farmer",
+      "category": "General",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Farmer"],
+    "expected_schemes": ["PM Kisan Samman Nidhi", "PM Fasal Bima Yojana", "Kisan Credit Card (KCC) Scheme"]
+  },
+  {
+    "profile_id": "P03",
+    "profile": {
+      "full_name": "Ramesh Chandra",
+      "age": 68,
+      "gender": "Male",
+      "state": "Maharashtra",
+      "district": "Pune",
+      "annual_family_income": 80000,
+      "occupation": "Senior Citizen",
+      "category": "General",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Senior Citizen"],
+    "expected_schemes": ["Indira Gandhi National Old Age Pension Scheme (IGNOAPS)", "Ayushman Bharat PM-JAY", "Atal Pension Yojana (APY)"]
+  },
+  {
+    "profile_id": "P04",
+    "profile": {
+      "full_name": "Meena Kumari",
+      "age": 29,
+      "gender": "Female",
+      "state": "Bihar",
+      "district": "Patna",
+      "annual_family_income": 90000,
+      "occupation": "Unemployed",
+      "category": "SC",
+      "disability_status": "Yes"
+    },
+    "expected_categories": ["Disability", "Women", "Employment", "Healthcare"],
+    "expected_schemes": ["Indira Gandhi National Disability Pension Scheme (IGNDPS)", "Deendayal Disabled Rehabilitation Scheme", "NSP SC Post-Matric Scholarship"]
+  },
+  {
+    "profile_id": "P05",
+    "profile": {
+      "full_name": "Arjun Singh",
+      "age": 26,
+      "gender": "Male",
+      "state": "Karnataka",
+      "district": "Bengaluru",
+      "annual_family_income": 350000,
+      "occupation": "Self-Employed",
+      "category": "General",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Startup", "Employment"],
+    "expected_schemes": ["Startup India Seed Fund Scheme", "PM MUDRA Yojana (PMMY)", "Stand Up India Scheme"]
+  },
+  {
+    "profile_id": "P06",
+    "profile": {
+      "full_name": "Pooja Verma",
+      "age": 19,
+      "gender": "Female",
+      "state": "Uttar Pradesh",
+      "district": "Lucknow",
+      "annual_family_income": 110000,
+      "occupation": "Student",
+      "category": "SC",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Student", "Education", "Women"],
+    "expected_schemes": ["NSP SC Post-Matric Scholarship", "Post-Matric Scholarship for SC Students", "Beti Bachao Beti Padhao Scheme"]
+  },
+  {
+    "profile_id": "P07",
+    "profile": {
+      "full_name": "Vikram Das",
+      "age": 34,
+      "gender": "Male",
+      "state": "West Bengal",
+      "district": "Kolkata",
+      "annual_family_income": 200000,
+      "occupation": "Employee",
+      "category": "OBC",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Employment", "Healthcare", "Housing"],
+    "expected_schemes": ["Pradhan Mantri Awas Yojana (PMAY-U)", "Ayushman Bharat PM-JAY", "PM Kaushal Vikas Yojana (PMKVY)"]
+  },
+  {
+    "profile_id": "P08",
+    "profile": {
+      "full_name": "Sunita Devi",
+      "age": 52,
+      "gender": "Female",
+      "state": "Rajasthan",
+      "district": "Jaipur",
+      "annual_family_income": 140000,
+      "occupation": "Farmer",
+      "category": "ST",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Farmer", "Women"],
+    "expected_schemes": ["PM Kisan Samman Nidhi", "Mahila Samman Savings Certificate", "PM Fasal Bima Yojana"]
+  },
+  {
+    "profile_id": "P09",
+    "profile": {
+      "full_name": "Karthik Nair",
+      "age": 23,
+      "gender": "Male",
+      "state": "Kerala",
+      "district": "Kochi",
+      "annual_family_income": 220000,
+      "occupation": "Student",
+      "category": "General",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Student", "Education"],
+    "expected_schemes": ["PM Vidya Lakshmi Education Loan", "Central Sector Scheme of Scholarships", "PM Kaushal Vikas Yojana (PMKVY)"]
+  },
+  {
+    "profile_id": "P10",
+    "profile": {
+      "full_name": "Lakshmi Narayanan",
+      "age": 72,
+      "gender": "Female",
+      "state": "Tamil Nadu",
+      "district": "Madurai",
+      "annual_family_income": 60000,
+      "occupation": "Senior Citizen",
+      "category": "General",
+      "disability_status": "No"
+    },
+    "expected_categories": ["Senior Citizen", "Women"],
+    "expected_schemes": ["Indira Gandhi National Old Age Pension Scheme (IGNOAPS)", "Ayushman Bharat PM-JAY", "Tamil Nadu Old Age Pension Scheme"]
+  }
+]
