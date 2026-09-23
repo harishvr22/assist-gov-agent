@@ -1,39 +1,79 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+export interface IndicLanguage {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+export const SUPPORTED_INDIC_LANGUAGES: IndicLanguage[] = [
+  { code: "en-IN", name: "English (India)", nativeName: "English", flag: "🇮🇳" },
+  { code: "hi-IN", name: "Hindi", nativeName: "हिन्दी", flag: "🇮🇳" },
+  { code: "mr-IN", name: "Marathi", nativeName: "मराठी", flag: "🇮🇳" },
+  { code: "ta-IN", name: "Tamil", nativeName: "தமிழ்", flag: "🇮🇳" },
+  { code: "te-IN", name: "Telugu", nativeName: "తెలుగు", flag: "🇮🇳" },
+  { code: "bn-IN", name: "Bengali", nativeName: "বাংলা", flag: "🇮🇳" },
+  { code: "gu-IN", name: "Gujarati", nativeName: "ગુજરાતી", flag: "🇮🇳" },
+  { code: "kn-IN", name: "Kannada", nativeName: "ಕನ್ನಡ", flag: "🇮🇳" },
+  { code: "ml-IN", name: "Malayalam", nativeName: "മലയാളം", flag: "🇮🇳" },
+  { code: "pa-IN", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ", flag: "🇮🇳" },
+];
+
 export interface UseVoiceReturn {
   isListening: boolean;
   isSpeaking: boolean;
   transcript: string;
   supported: boolean;
   error: string | null;
+  selectedLanguage: string;
+  setSelectedLanguage: (langCode: string) => void;
+  handsFreeMode: boolean;
+  setHandsFreeMode: (enabled: boolean) => void;
   startListening: (onResult?: (text: string) => void) => void;
   stopListening: () => void;
   speakText: (text: string, onEnd?: () => void) => void;
   stopSpeaking: () => void;
   clearTranscript: () => void;
+  languages: IndicLanguage[];
 }
 
 export function useVoice(): UseVoiceReturn {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<string>("");
-  const [supported, setSupported] = useState<boolean>(false);
+  const [supported, setSupported] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLanguage, setSelectedLanguageState] = useState<string>("en-IN");
+  const [handsFreeMode, setHandsFreeMode] = useState<boolean>(false);
 
   const recognitionRef = useRef<any>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const onResultCallbackRef = useRef<((text: string) => void) | null>(null);
+  const onSpeechEndCallbackRef = useRef<(() => void) | null>(null);
+
+  // Synchronize recognition language whenever selectedLanguage updates
+  const setSelectedLanguage = useCallback((langCode: string) => {
+    setSelectedLanguageState(langCode);
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.lang = langCode;
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (SpeechRecognition) {
-      setSupported(true);
       try {
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = true;
-        recognition.lang = "en-IN"; // English (India) default, also works for general speech
+        recognition.lang = selectedLanguage;
 
         recognition.onresult = (event: any) => {
           let currentTranscript = "";
@@ -47,8 +87,10 @@ export function useVoice(): UseVoiceReturn {
         };
 
         recognition.onerror = (event: any) => {
-          console.warn("Speech recognition error:", event.error);
-          setError(`Speech recognition error: ${event.error}`);
+          console.warn("Speech recognition notice/error:", event.error);
+          if (event.error !== "no-speech") {
+            setError(`Speech recognition error: ${event.error}`);
+          }
           setIsListening(false);
         };
 
@@ -57,8 +99,9 @@ export function useVoice(): UseVoiceReturn {
         };
 
         recognitionRef.current = recognition;
+        setSupported(true);
       } catch (err: any) {
-        console.error("Failed to initialize Speech Recognition:", err);
+        console.warn("Speech Recognition initialization fallback:", err);
         setSupported(false);
       }
     } else {
@@ -76,34 +119,40 @@ export function useVoice(): UseVoiceReturn {
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
     };
   }, []);
 
   const startListening = useCallback((onResult?: (text: string) => void) => {
     setError(null);
-    if (!recognitionRef.current) {
-      const msg = "Speech Recognition is not supported in this browser. Try Chrome or Edge.";
-      setError(msg);
-      return;
+    if (onResult) {
+      onResultCallbackRef.current = onResult;
     }
-
-    onResultCallbackRef.current = onResult || null;
     setTranscript("");
-    try {
-      recognitionRef.current.start();
-      setIsListening(true);
-    } catch (err: any) {
-      console.warn("Speech recognition start failed:", err);
-      // Restart if already running
+
+    if (recognitionRef.current) {
       try {
-        recognitionRef.current.stop();
+        recognitionRef.current.lang = selectedLanguage;
         recognitionRef.current.start();
         setIsListening(true);
-      } catch (e) {
-        setError("Failed to start speech recognition mic input.");
+        return;
+      } catch (err: any) {
+        try {
+          recognitionRef.current.stop();
+          recognitionRef.current.start();
+          setIsListening(true);
+          return;
+        } catch (e) {
+          console.warn("Native start listening retry failed, using server fallback.");
+        }
       }
     }
-  }, []);
+
+    // Fallback indicator if browser SpeechRecognition is missing
+    setError("Browser speech recognition unavailable. Microphones work best in Chrome/Edge.");
+  }, [selectedLanguage]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -116,17 +165,10 @@ export function useVoice(): UseVoiceReturn {
     setIsListening(false);
   }, []);
 
-  const speakText = useCallback((text: string, onEnd?: () => void) => {
+  const speakText = useCallback(async (text: string, onEnd?: () => void) => {
     setError(null);
-    if (!("speechSynthesis" in window)) {
-      setError("Text-to-speech is not supported in this browser.");
-      return;
-    }
+    onSpeechEndCallbackRef.current = onEnd || null;
 
-    // Stop any ongoing speech
-    window.speechSynthesis.cancel();
-
-    // Clean markdown symbols from text before speaking
     const cleanText = text
       .replace(/[*_#`~]/g, "")
       .replace(/https?:\/\/[^\s]+/g, "link")
@@ -135,31 +177,74 @@ export function useVoice(): UseVoiceReturn {
 
     if (!cleanText) return;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.lang = "en-IN";
+    // 1. Try Browser Speech Synthesis
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.lang = selectedLanguage;
 
-    utterance.onstart = () => {
+        utterance.onstart = () => {
+          setIsSpeaking(true);
+        };
+
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          if (onSpeechEndCallbackRef.current) {
+            onSpeechEndCallbackRef.current();
+          }
+        };
+
+        utterance.onerror = () => {
+          setIsSpeaking(false);
+        };
+
+        window.speechSynthesis.speak(utterance);
+        return;
+      } catch (e) {
+        console.warn("Native speech synthesis error, using server fallback", e);
+      }
+    }
+
+    // 2. Server-side TTS fallback via /api/voice/synthesize
+    try {
       setIsSpeaking(true);
-    };
-
-    utterance.onend = () => {
+      const res = await fetch("/api/voice/synthesize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleanText, lang: selectedLanguage }),
+      });
+      const data = await res.json();
+      if (data.status === "success" && data.audio_url) {
+        if (!audioPlayerRef.current) {
+          audioPlayerRef.current = new Audio();
+        }
+        audioPlayerRef.current.src = data.audio_url;
+        audioPlayerRef.current.onended = () => {
+          setIsSpeaking(false);
+          if (onSpeechEndCallbackRef.current) {
+            onSpeechEndCallbackRef.current();
+          }
+        };
+        await audioPlayerRef.current.play();
+      } else {
+        throw new Error(data.message || "Synthesis failed");
+      }
+    } catch (err: any) {
+      console.error("Server TTS synthesis error:", err);
       setIsSpeaking(false);
-      if (onEnd) onEnd();
-    };
-
-    utterance.onerror = (e: any) => {
-      console.warn("Speech synthesis error:", e);
-      setIsSpeaking(false);
-    };
-
-    window.speechSynthesis.speak(utterance);
-  }, []);
+      setError("Speech synthesis unavailable.");
+    }
+  }, [selectedLanguage]);
 
   const stopSpeaking = useCallback(() => {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+    }
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
     }
     setIsSpeaking(false);
   }, []);
@@ -174,10 +259,15 @@ export function useVoice(): UseVoiceReturn {
     transcript,
     supported,
     error,
+    selectedLanguage,
+    setSelectedLanguage,
+    handsFreeMode,
+    setHandsFreeMode,
     startListening,
     stopListening,
     speakText,
     stopSpeaking,
     clearTranscript,
+    languages: SUPPORTED_INDIC_LANGUAGES,
   };
 }

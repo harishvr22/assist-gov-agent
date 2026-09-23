@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
 import { EligibilityProvider } from "../hooks/useEligibility";
+import { InteractiveVoiceAssistant } from "../components/InteractiveVoiceAssistant";
+
 
 function NotFoundComponent() {
   return (
@@ -119,6 +121,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function RootComponent() {
+
   const { queryClient } = Route.useRouteContext();
 
   return (
@@ -127,8 +130,10 @@ function RootComponent() {
         <EligibilityProvider>
           {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
           <Outlet />
+          <InteractiveVoiceAssistant />
         </EligibilityProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+

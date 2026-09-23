@@ -1,5 +1,5 @@
 import React from "react";
-import { Mic, MicOff, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Globe } from "lucide-react";
 import { useVoice } from "../hooks/useVoice";
 
 interface VoiceControlsProps {
@@ -20,6 +20,9 @@ export function VoiceControls({
     isSpeaking,
     transcript,
     supported,
+    selectedLanguage,
+    setSelectedLanguage,
+    languages,
     startListening,
     stopListening,
     speakText,
@@ -49,6 +52,23 @@ export function VoiceControls({
   if (compact) {
     return (
       <div className={`inline-flex items-center gap-1.5 ${className}`}>
+        {/* Language Selector */}
+        <div className="relative flex items-center">
+          <Globe className="w-3.5 h-3.5 text-muted-foreground absolute left-2 pointer-events-none" />
+          <select
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            title="Select Speech Language"
+            className="pl-6 pr-2 py-1.5 rounded-xl text-xs bg-white/80 border border-border text-[var(--navy)] outline-none cursor-pointer hover:border-[var(--electric)] transition font-mono"
+          >
+            {languages.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.flag} {l.nativeName}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* Mic Button */}
         <button
           type="button"
@@ -83,8 +103,8 @@ export function VoiceControls({
   }
 
   return (
-    <div className={`flex flex-col gap-2 p-3.5 rounded-2xl glass border border-border/60 ${className}`}>
-      <div className="flex items-center justify-between gap-3">
+    <div className={`flex flex-col gap-2.5 p-3.5 rounded-2xl glass border border-border/60 ${className}`}>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {/* Mic Button */}
           <button
@@ -131,15 +151,34 @@ export function VoiceControls({
           )}
         </div>
 
-        <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+        {/* Indic Language Picker */}
+        <div className="flex items-center gap-1.5">
+          <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+          <select
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            className="px-2 py-1 rounded-xl text-[11px] font-mono bg-white/80 border border-border text-[var(--navy)] outline-none cursor-pointer hover:border-[var(--electric)] transition"
+          >
+            {languages.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.flag} {l.name} ({l.nativeName})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+        <span>
           {isListening
             ? "Recording speech..."
             : isSpeaking
             ? "Playing voice response..."
             : supported
             ? "Voice Assistant Ready"
-            : "Text Mode"}
-        </div>
+            : "Server Voice Mode"}
+        </span>
+        <span>Selected: {languages.find((l) => l.code === selectedLanguage)?.name}</span>
       </div>
 
       {/* Transcript Live Preview */}

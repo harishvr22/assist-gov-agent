@@ -622,6 +622,7 @@ def chat():
     message = str(data.get("message", "")).strip()
     username = str(data.get("username", "anonymous")).strip()
     profile = data.get("profile", {})
+    language = str(data.get("language", "en-IN")).strip()
 
     if not message:
         return jsonify({"status": "error", "message": "Message cannot be empty"}), 400
@@ -661,28 +662,32 @@ def chat():
         )
         
         prompt = PromptTemplate.from_template(
-            "You are a helpful GovTech assistant.\n"
+            "You are a helpful GovTech assistant for Indian citizens.\n"
             "Detected Intent: {primary_intent} (Confidence: {confidence})\n"
-            "Help the citizen answer their questions using the provided context details and conversation history.\n\n"
+            "Preferred Output Language Code: {language}\n"
+            "Help the citizen answer their questions using the provided context details and conversation history.\n"
+            "If the requested language is a non-English language (e.g., Hindi, Marathi, Tamil, Telugu, etc.), write your answer primarily in that language or natural script.\n\n"
             "Citizen Profile details: {profile}\n\n"
             "Multi-Turn Conversation History:\n{history}\n\n"
             "ChromaDB Scheme Context Guidelines:\n{context}\n\n"
             "User Message: {message}\n\n"
-            "Explain in clear, simple paragraphs. Support Hindi/Tamil translations or simple English definitions if asked."
+            "Explain in clear, concise, simple response paragraphs."
         )
         
         chain = prompt | llm
         response = chain.invoke({
             "primary_intent": intent_data["primary_intent"],
             "confidence": intent_data["confidence"],
+            "language": language,
             "profile": str(profile),
             "history": history_str,
             "context": context_str,
-            "message": message
+            "message": message,
         })
         reply = response.content
     except Exception as e:
         reply = f"I'm sorry, I encountered an issue querying the AI service: {e}"
+
 
     # Log query and persist multi-turn history
     db.queries.insert_one({
@@ -863,7 +868,70 @@ def admin_upload_pdf():
                 pass
 
 
+# ── Voice Processing Endpoints (STT & TTS) ──────────────────────────────────
+@app.post("/api/voice/synthesize")
+def voice_synthesize():
+    """Generates MP3 audio for given text in requested Indic language via gTTS."""
+    data = request.get_json(silent=True) or {}
+    text = str(data.get("text", "")).strip()
+    lang = str(data.get("lang", "en-IN")).strip()
+
+    if not text:
+        return jsonify({"status": "error", "message": "Text parameter is required"}), 400
+
+    try:
+        from backend.voice_service import synthesize_speech
+        audio_url = synthesize_speech(text=text, lang=lang)
+        return jsonify({
+            "status": "success",
+            "audio_url": audio_url,
+            "lang": lang
+        }), 200
+    except Exception as e:
+        logger.exception("Voice synthesis error")
+        return jsonify({"status": "error", "message": f"Speech synthesis failed: {e}"}), 500
+
+
+@app.post("/api/voice/transcribe")
+def voice_transcribe():
+    """Transcribes user speech audio clip via Gemini 2.5 Flash multimodal model."""
+    audio_bytes = None
+    mime_type = "audio/webm"
+    lang = request.form.get("lang", "en-IN")
+
+    if "audio" in request.files:
+        file = request.files["audio"]
+        audio_bytes = file.read()
+        mime_type = file.mimetype or "audio/webm"
+    else:
+        data = request.get_json(silent=True) or {}
+        audio_b64 = data.get("audio_b64", "")
+        mime_type = data.get("mime_type", "audio/webm")
+        lang = data.get("lang", "en-IN")
+        if audio_b64:
+            import base64
+            if "," in audio_b64:
+                audio_b64 = audio_b64.split(",")[1]
+            audio_bytes = base64.b64decode(audio_b64)
+
+    if not audio_bytes:
+        return jsonify({"status": "error", "message": "Audio payload or file is required"}), 400
+
+    try:
+        from backend.voice_service import transcribe_audio
+        transcript = transcribe_audio(audio_bytes=audio_bytes, mime_type=mime_type, lang=lang)
+        return jsonify({
+            "status": "success",
+            "transcript": transcript,
+            "lang": lang
+        }), 200
+    except Exception as e:
+        logger.exception("Voice transcription error")
+        return jsonify({"status": "error", "message": f"Speech transcription failed: {e}"}), 500
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
 

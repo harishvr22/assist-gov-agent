@@ -100,6 +100,17 @@ class DocumentProcessor:
         text = self.extract_text_from_pdf(file_path)
         chunks = self.chunk_text(text)
 
+        if not chunks:
+            logger.warning("No text passages could be extracted from '%s'. Skipping indexing.", file_path)
+            return {
+                "status": "warning",
+                "scheme_name": scheme_name,
+                "category": category,
+                "passages_indexed": 0,
+                "sample_chunk": "",
+                "message": "No text content extracted"
+            }
+
         ids = [f"DOC_{scheme_name.replace(' ', '_')}_{i}" for i in range(len(chunks))]
         documents = [
             f"Scheme Name: {scheme_name}\nCategory: {category}\nState: {state}\nPassage: {chunk}"
