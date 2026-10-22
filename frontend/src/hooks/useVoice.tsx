@@ -165,56 +165,13 @@ export function useVoice(): UseVoiceReturn {
     setIsListening(false);
   }, []);
 
-  const speakText = useCallback(async (text: string, onEnd?: () => void) => {
-    setError(null);
-    onSpeechEndCallbackRef.current = onEnd || null;
-
-    const cleanText = text
-      .replace(/[*_#`~]/g, "")
-      .replace(/https?:\/\/[^\s]+/g, "link")
-      .replace(/\n+/g, " ")
-      .trim();
-
-    if (!cleanText) return;
-
-    // 1. Try Browser Speech Synthesis
-    if ("speechSynthesis" in window) {
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
-        utterance.lang = selectedLanguage;
-
-        utterance.onstart = () => {
-          setIsSpeaking(true);
-        };
-
-        utterance.onend = () => {
-          setIsSpeaking(false);
-          if (onSpeechEndCallbackRef.current) {
-            onSpeechEndCallbackRef.current();
-          }
-        };
-
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-        };
-
-        window.speechSynthesis.speak(utterance);
-        return;
-      } catch (e) {
-        console.warn("Native speech synthesis error, using server fallback", e);
-      }
-    }
-
-    // 2. Server-side TTS fallback via /api/voice/synthesize
+  const playServerTTS = useCallback(async (cleanText: string, langCode: string, onEnd?: () => void) => {
     try {
       setIsSpeaking(true);
       const res = await fetch("/api/voice/synthesize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: cleanText, lang: selectedLanguage }),
+        body: JSON.stringify({ text: cleanText, lang: langCode }),
       });
       const data = await res.json();
       if (data.status === "success" && data.audio_url) {
@@ -228,6 +185,11 @@ export function useVoice(): UseVoiceReturn {
             onSpeechEndCallbackRef.current();
           }
         };
+        audioPlayerRef.current.onerror = (err) => {
+          console.error("Server audio playback error:", err);
+          setIsSpeaking(false);
+          setError("Failed to play audio.");
+        };
         await audioPlayerRef.current.play();
       } else {
         throw new Error(data.message || "Synthesis failed");
@@ -237,7 +199,72 @@ export function useVoice(): UseVoiceReturn {
       setIsSpeaking(false);
       setError("Speech synthesis unavailable.");
     }
-  }, [selectedLanguage]);
+  }, []);
+
+  const speakText = useCallback(async (text: string, onEnd?: () => void) => {
+    setError(null);
+    onSpeechEndCallbackRef.current = onEnd || null;
+
+    const cleanText = text
+      .replace(/[*_#`~]/g, "")
+      .replace(/https?:\/\/[^\s]+/g, "link")
+      .replace(/\n+/g, " ")
+      .trim();
+
+    if (!cleanText) return;
+
+    // Check if browser has a native voice installed for selectedLanguage
+    const isEnglish = selectedLanguage.startsWith("en");
+    let matchingVoice: SpeechSynthesisVoice | null = null;
+    
+    if ("speechSynthesis" in window) {
+      const voices = window.speechSynthesis.getVoices();
+      const langPrefix = selectedLanguage.split("-")[0].toLowerCase();
+      matchingVoice = voices.find((v) => {
+        const vLang = v.lang.toLowerCase().replace("_", "-");
+        return vLang === selectedLanguage.toLowerCase() || vLang.startsWith(langPrefix);
+      }) || null;
+    }
+
+    // 1. If English OR browser has an installed native voice for the selected language, use Web Speech API
+    if ("speechSynthesis" in window && (isEnglish || matchingVoice !== null)) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.lang = selectedLanguage;
+        if (matchingVoice) {
+          utterance.voice = matchingVoice;
+        }
+
+        utterance.onstart = () => {
+          setIsSpeaking(true);
+        };
+
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          if (onSpeechEndCallbackRef.current) {
+            onSpeechEndCallbackRef.current();
+          }
+        };
+
+        utterance.onerror = (e) => {
+          console.warn("Native speech synthesis error, using server fallback", e);
+          setIsSpeaking(false);
+          playServerTTS(cleanText, selectedLanguage, onEnd);
+        };
+
+        window.speechSynthesis.speak(utterance);
+        return;
+      } catch (e) {
+        console.warn("Native speech synthesis exception, using server fallback", e);
+      }
+    }
+
+    // 2. Server-side TTS fallback via /api/voice/synthesize (gTTS for Tamil & Indic languages)
+    await playServerTTS(cleanText, selectedLanguage, onEnd);
+  }, [selectedLanguage, playServerTTS]);
 
   const stopSpeaking = useCallback(() => {
     if ("speechSynthesis" in window) {

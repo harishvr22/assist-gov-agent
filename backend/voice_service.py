@@ -51,7 +51,7 @@ def synthesize_speech(text: str, lang: str = "en-IN") -> str:
     clean_text = text.replace("*", "").replace("#", "").replace("_", "").replace("`", "").strip()
 
     try:
-        tts = gTTS(text=clean_text, lang=target_lang, slow=False)
+        tts = gTTS(text=clean_text, lang=target_lang, tld="co.in", slow=False)
         mp3_fp = io.BytesIO()
         tts.write_to_fp(mp3_fp)
         mp3_fp.seek(0)
@@ -59,16 +59,17 @@ def synthesize_speech(text: str, lang: str = "en-IN") -> str:
         audio_b64 = base64.b64encode(mp3_fp.read()).decode("utf-8")
         return f"data:audio/mp3;base64,{audio_b64}"
     except Exception as e:
-        logger.error(f"Error in gTTS speech synthesis: {e}")
-        # Fallback to English if regional accent fails
-        if target_lang != "en":
-            tts = gTTS(text=clean_text, lang="en", slow=False)
+        logger.warning(f"gTTS with tld='co.in' failed, retrying with default domain: {e}")
+        try:
+            tts = gTTS(text=clean_text, lang=target_lang, slow=False)
             mp3_fp = io.BytesIO()
             tts.write_to_fp(mp3_fp)
             mp3_fp.seek(0)
             audio_b64 = base64.b64encode(mp3_fp.read()).decode("utf-8")
             return f"data:audio/mp3;base64,{audio_b64}"
-        raise e
+        except Exception as err2:
+            logger.error(f"gTTS speech synthesis error for lang '{target_lang}': {err2}")
+            raise err2
 
 
 def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/webm", lang: str = "en-IN") -> str:

@@ -49,7 +49,7 @@ export function InteractiveVoiceAssistant() {
 
   // Handle sending query to Flask RAG backend (/api/chat)
   const handleSendQuery = async (queryText: string) => {
-    if (!queryText || !queryText.strip ? !queryText.trim() : false) return;
+    if (!queryText || !queryText.trim()) return;
     const cleanQuery = queryText.trim();
     
     // Stop mic while processing query
